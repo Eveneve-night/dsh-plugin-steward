@@ -1,0 +1,52 @@
+{
+  "name": "dsh-plugin-steward",
+  "version": "0.2.0",
+  "description": "Manage DeepSeek Harness plugins from the chat composer: list every installed bundle, switch plugins on or off, edit each plugin's settings, and hide one plugin's tools and MCP servers from a single conversation.",
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh-plugin",
+    "dsh-bundle",
+    "plugin-manager",
+    "plugin-settings",
+    "web-ui"
+  ],
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eveneve-night/dsh-plugin-steward.git"
+  },
+  "homepage": "https://github.com/Eveneve-night/dsh-plugin-steward#readme",
+  "bugs": {
+    "url": "https://github.com/Eveneve-night/dsh-plugin-steward/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ],
+      "immediately": true
+    }
+  }
+}

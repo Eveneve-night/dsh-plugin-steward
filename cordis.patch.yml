@@ -1,0 +1,7 @@
+# 插件管家（dsh-plugin-steward）的组合补丁层。
+# 当 profile 的 dsh.profile.bundles 列出本包时，此层被应用：
+# 向组合中插入一行浏览器插件（同时具备 host 半与 client 半）。
+
+- insert:
+    - id: plugin-console
+      name: 'dsh-plugin-steward'
