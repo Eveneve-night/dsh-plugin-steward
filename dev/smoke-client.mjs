@@ -134,13 +134,29 @@ globalThis.fetch = async (url, options) => ({
         owners: { scannedAt: null, scannedPackages: 13, ambiguous: [] },
       }
     }
+    if (String(url).includes('/tags')) {
+      const entry = {
+        label: '余额挂件',
+        summary: '右下角常驻小鲸鱼，显示余额与每轮消耗',
+        tags: ['余额', '挂件'],
+        source: 'ai',
+        model: 'deepseek-official/deepseek-flash',
+        at: 1700000000000,
+      }
+      if ((options?.method ?? 'GET') === 'POST') {
+        const sent = JSON.parse(options?.body ?? '{}')
+        return { status: 'ok', packageName: sent.packageName, ...entry }
+      }
+      return { status: 'ok', count: 1, entries: { 'dsh-whale-widget': entry }, model: entry.model, probing: null }
+    }
     if (String(url).includes('/catalog')) {
       return {
         status: 'ok',
+        aiTagsEnabled: true,
         layout: { profileDir: 'X', stateFile: 'X/state.json' },
         bundles: [
           { name: '@deepseek-ai/dsh-base', title: '基础', version: '0.2.1', enabled: true, official: true, installed: true, removable: false, alwaysOn: true, description: '内核', rowCount: 1 },
-          { name: 'dsh-whale-widget', title: '小鲸鱼', version: '0.4.2', enabled: true, official: false, installed: true, removable: true, alwaysOn: false, description: '余额挂件', rowCount: 1, rowIds: ['include:dsh-whale-widget'] },
+          { name: 'dsh-whale-widget', title: '小鲸鱼', version: '0.4.2', enabled: true, official: false, installed: true, removable: true, alwaysOn: false, description: '右下角余额挂件，可自定义泡泡内容', rowCount: 1, rowIds: ['include:dsh-whale-widget'], aiTag: { label: '余额挂件', summary: '右下角常驻小鲸鱼，显示余额与每轮消耗', tags: ['余额', '挂件'], source: 'ai', model: 'deepseek-official/deepseek-flash' } },
         ],
         installed: ['@deepseek-ai/dsh-base', 'dsh-whale-widget'],
         rows: [
@@ -276,6 +292,37 @@ else {
     const save = elements.find(el => el.props?.className === 'pc-btn' && el.props?.['data-primary'] === '1')
     if (save === undefined) problems.push('设置抽屉里没有保存按钮')
     else if (save.props.disabled !== true) problems.push('没改动时保存按钮应当禁用')
+  }
+}
+
+/* 折叠 / 展开 + AI 中文标签：行默认只显示名字，点箭头才出描述；有标签时名字用标签 */
+if (panelReg !== undefined) {
+  const back = render(panelReg.component, {})
+  const cancelBtn = back.elements.find(el => el.props?.className === 'pc-btn' && el.props?.['data-primary'] !== '1')
+  if (cancelBtn !== undefined) cancelBtn.props.onClick()
+  await new Promise((resolve) => setTimeout(resolve, 30))
+
+  const collapsed = render(panelReg.component, {})
+  const collapsedText = collapsed.text.join(' ').replace(/\s+/g, ' ')
+  if (!collapsedText.includes('余额挂件')) problems.push('列表里没有显示 AI 中文标签「余额挂件」')
+  if (collapsedText.includes('可自定义泡泡内容')) problems.push('行默认折叠时不应显示描述')
+  const aiBtn = collapsed.elements.find(el => el.props?.className === 'pc-gear' && el.props?.children === '中')
+  if (aiBtn === undefined) problems.push('插件行上没有「中」AI 标签按钮')
+
+  const expander = collapsed.elements.find(el => el.props?.className === 'pc-exp')
+  if (expander === undefined) problems.push('插件行上没有展开箭头 .pc-exp')
+  else {
+    try { expander.props.onClick() } catch (error) {
+      problems.push(`点击展开箭头抛错: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    const opened = render(panelReg.component, {})
+    const openedText = opened.text.join(' ').replace(/\s+/g, ' ')
+    console.log(`  plugin-console-panel 展开后文本片段: ${openedText.slice(0, 160)}…`)
+    if (!openedText.includes('可自定义泡泡内容')) problems.push('展开后没有显示插件描述')
+    if (opened.elements.filter(el => el.props?.className === 'pc-desc').length === 0) problems.push('展开后没有 .pc-desc 元素')
+    if (opened.elements.filter(el => el.props?.className === 'pc-tag').length === 0) problems.push('展开后没有 .pc-tag 标签胶囊')
+    if (opened.elements.filter(el => el.props?.className === 'pc-aisum').length === 0) problems.push('展开后没有 .pc-aisum AI 说明行')
   }
 }
 
