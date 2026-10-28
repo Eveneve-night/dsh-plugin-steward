@@ -112,6 +112,7 @@ Nothing else is modified; global switching goes through the platform's own plugi
 ### Test
 
 ```sh
+node dev/test-gates.mjs       # session policy concurrency and ownership cache
 node dev/smoke-client.mjs      # client half: load, 3 slot registrations, panel / this-conversation / settings render
 node dev/test-describe.mjs     # description derivation against 6 installed plugins
 node --check lib/index.js      # host half syntax
@@ -178,6 +179,7 @@ target: <本仓库的路径>
 ### 自测
 
 ```sh
+node dev/test-gates.mjs       # session policy concurrency and ownership cache
 node dev/smoke-client.mjs
 node dev/test-describe.mjs
 node --check lib/index.js

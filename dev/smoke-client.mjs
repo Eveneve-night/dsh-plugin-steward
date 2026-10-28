@@ -384,6 +384,39 @@ if (panelReg !== undefined) {
   }
 }
 
+// 延迟响应：保存中所有会话开关禁用，旧回调也不能发出覆盖前次策略的请求。
+if (panelReg !== undefined) {
+  const originalFetch = globalThis.fetch
+  const sent = []
+  let release
+  globalThis.fetch = (url, options) => {
+    if (String(url).includes('/session') && options?.method === 'POST') {
+      sent.push(JSON.parse(options.body))
+      if (sent.length === 1) return new Promise(resolve => {
+        release = () => resolve(originalFetch(url, options))
+      })
+    }
+    return originalFetch(url, options)
+  }
+  try {
+    const initial = render(panelReg.component, {}).elements.filter(el => el.props?.className === 'pc-sw')
+    initial[1].props.onClick()
+    const saving = render(panelReg.component, {}).elements.filter(el => el.props?.className === 'pc-sw')
+    if (saving.length < 2 || saving.some(el => el.props.disabled !== true)) problems.push('保存期间没有禁用全部会话开关')
+    initial[0].props.onClick()
+    if (sent.length !== 1) problems.push('快速点击旧回调发出了第二份覆盖策略')
+    release()
+    await new Promise(resolve => setImmediate(resolve))
+    const saved = render(panelReg.component, {}).elements.filter(el => el.props?.className === 'pc-sw')
+    if (saved.some(el => el.props.disabled === true)) problems.push('保存后会话开关没有恢复')
+    saved[0].props.onClick()
+    await new Promise(resolve => setImmediate(resolve))
+    if (sent.length !== 2 || !sent[1].disabledMcp.includes('misakanet')) problems.push('下一次切换丢失了刚保存的 MCP 策略')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+}
+
 console.log(`\n注入点: ${injections.join(', ')}`)
 console.log(`注册数: ${registrations.length}`)
 console.log(`样式注入: ${headChildren.length} 个 <style>`)
