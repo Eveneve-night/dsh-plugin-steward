@@ -273,7 +273,13 @@ else {
   await new Promise((resolve) => setTimeout(resolve, 40))
   const first = render(panelReg.component, {})
   if (DEBUG) console.log('DEBUG list classes: ' + first.elements.map(el => String(el.props?.className)).join(' | '))
-  const gear = first.elements.find(el => el.props?.className === 'pc-gear' && el.props?.children === '⚙')
+  // 面板现在默认落在「本对话」页，先切回「全局」再测全局列表的行行为
+  const globalBtn = first.elements.find(el => el.props?.className === 'pc-scopebtn' && String(el.props?.children).includes('全局'))
+  if (globalBtn === undefined) problems.push('面板头部没有「全局」切换按钮')
+  else { globalBtn.props.onClick() }
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  const globalView = render(panelReg.component, {})
+  const gear = globalView.elements.find(el => el.props?.className === 'pc-gear' && el.props?.children === '⚙')
   if (gear === undefined) problems.push('插件行上没有 ⚙ 设置按钮')
   else {
     try { gear.props.onClick() } catch (error) {
@@ -349,8 +355,19 @@ if (panelReg !== undefined) {
     if (DEBUG) console.log('DEBUG session classes: ' + sessionView.elements.map(el => String(el.props?.className)).join(' | '))
     const joined = sessionView.text.join(' ').replace(/\s+/g, ' ')
     console.log(`  plugin-console-panel 本对话文本片段: ${joined.slice(0, 160)}…`)
-    for (const want of ['只作用于本对话', 'billion-context', 'MCP · misakanet', '已拦截']) {
+    for (const want of ['只作用于本对话', 'billion-context', 'MCP · misakanet', '已拦截', '官方插件']) {
       if (!joined.includes(want)) problems.push(`本对话视图里缺少「${want}」`)
+    }
+    // 与全局页同一套行布局：每项一条 .pc-row，且官方插件合并成一条可展开项
+    const sessionRows = sessionView.elements.filter(el => el.props?.className === 'pc-row')
+    if (sessionRows.length < 3) problems.push(`本对话视图里只有 ${sessionRows.length} 条插件行（应 ≥3：插件 + MCP + 官方）`)
+    if (!joined.includes('个工具')) problems.push('本对话视图的行里没有「N 个工具」说明')
+    // 展开官方插件那一条
+    const officialExp = sessionView.elements.filter(el => el.props?.className === 'pc-exp')[sessionRows.length - 1]
+    if (officialExp !== undefined) {
+      try { officialExp.props.onClick() } catch (error) {
+        problems.push(`展开官方插件抛错: ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
     const switches = sessionView.elements.filter(el => el.props?.className === 'pc-sw')
     if (switches.length < 2) problems.push(`本对话视图里开关只有 ${switches.length} 个（应 ≥2：插件 + MCP）`)
@@ -362,7 +379,7 @@ if (panelReg !== undefined) {
       const after = render(panelReg.component, {})
       const afterText = after.text.join(' ').replace(/\s+/g, ' ')
       if (!afterText.includes('已拦截')) problems.push('切换后没有显示拦截数量')
-      if (!afterText.includes('compress')) problems.push('切换后没有出现被拦截的工具名')
+      if (!afterText.includes('已拦截 2')) problems.push('切换后拦截数量没有更新（应显示「已拦截 2 个」）')
     }
   }
 }

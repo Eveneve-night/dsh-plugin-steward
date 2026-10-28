@@ -23,6 +23,7 @@ the web UI. It starts no extra process and stores no credentials.
 | Automatic descriptions | When a plugin ships no `meta.description`, the host derives one sentence (≤ 90 chars) from the plugin's own README, client slot ids or `package.json`. Author-written descriptions always win; ✨ regenerates on demand and the source is labelled. |
 | AI Chinese labels | The 中 button asks the current default model to read the plugin's own README, `package.json` and client slot ids, and write a short Chinese label + one-line summary + 2–4 keywords as JSON. Results are stored in `tags.json`, so they survive reloads and restarts, and the label replaces the English package name in the list. If the model answers with prose, the host re-asks once, then falls back to a rule-based label. Can be turned off in Settings. |
 | Compact rows, expandable | Rows show only the name (and badges) by default; ▸ expands to the small-print description, AI summary and keywords. |
+| This-conversation first | With a session in context the panel opens on the **本对话 / This conversation** page. It reuses the global list layout — one plugin per line, expandable — and merges the official plugins into a single collapsible entry. |
 | Movable panel | Drag the panel by its title bar; the position is remembered in `localStorage` and clamped to the viewport. Double-click the title bar to snap back to the top-right corner. |
 | New-plugin discovery | A silent scan every 5 minutes records newly appeared bundles and rows as pending. The button shows an orange dot; the panel offers one click to acknowledge them. |
 | Kernel section | Bundles that ship with DSH itself and are actually assembled in the current profile are listed on a separate read-only **内核** tab with 🔒. Their enable logic stays isolated in the backend from third-party plugins. |
@@ -131,6 +132,7 @@ node --check lib/index.js      # host half syntax
 | 自动描述 | 插件没写 `meta.description` 时，按它自己的 README、客户端 slot id、`package.json` 生成一句话（≤90 字）；作者写的描述永远优先，✨ 可手动重新生成，并标注来源。 |
 | AI 中文标签 | 行上的「中」按钮让当前默认模型读这个插件自己的 README、`package.json`、客户端注入点，输出「中文名 + 一句话 + 2–4 个关键词」的 JSON。结果存在 `tags.json`，刷新/重启后仍在，并且中文名直接替换列表里的英文包名。模型答成散文时会带上次输出再问一次，还不行就用规则从插件信息里提炼。设置页可关闭此功能。 |
 | 紧凑行、按需展开 | 行默认只显示名称（与徽章），点 ▸ 才展开小字描述、AI 一句话与关键词。 |
+| 本对话优先 | 有会话上下文时面板默认落在「本对话」页；它与「全局」页用同一套行布局（每项单列、可展开），官方插件合并成一条可下拉展开的条目。 |
 | 面板可拖动 | 按住标题栏拖动，位置记在 `localStorage` 并限制在视口内；双击标题栏回到右上角。 |
 | 自动发现 | 每 5 分钟静默扫描一次，把新出现的 bundle / 行记成「待纳入管理」，按钮上出现橙点，面板里一键认领。 |
 | 内核分区 | DSH 本体自带、且当前 profile 真正组装的包单独列成只读「内核」页（🔒）；它们的启用逻辑在后端与第三方插件完全隔离。 |
