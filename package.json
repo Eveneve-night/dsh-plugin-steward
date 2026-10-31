@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-steward",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Manage DeepSeek Harness plugins from the chat composer: list every installed bundle, switch plugins on or off, edit each plugin's settings, hide one plugin's tools and MCP servers from a single conversation, and have the model write short Chinese labels plus one-line usage notes for the plugins you have installed.",
   "enginesNote": "verified against DeepSeek Harness 0.2.1-rc.5 / 0.2.1 (desktop)",
   "keywords": [
