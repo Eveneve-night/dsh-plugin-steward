@@ -22,7 +22,9 @@ the web UI. It starts no extra process and stores no credentials.
 | Per-conversation gating | The **This conversation** tab hides a plugin's tools or a whole MCP server from the model for one conversation. It calls `agent.ctx.tools.restrict()` on that agent, so it applies to an already-running conversation from the next request. Policies are saved per session and re-applied after a reload or restart. |
 | Automatic descriptions | When a plugin ships no `meta.description`, the host derives one sentence (≤ 90 chars) from the plugin's own README, client slot ids or `package.json`. Author-written descriptions always win; ✨ regenerates on demand and the source is labelled. |
 | AI Chinese labels | The 中 button asks the current default model to read the plugin's own README, `package.json` and client slot ids, and write a short Chinese label + one-line summary + 2–4 keywords as JSON. Results are stored in `tags.json`, so they survive reloads and restarts, and the label replaces the English package name in the list. If the model answers with prose, the host re-asks once, then falls back to a rule-based label. Can be turned off in Settings. |
-| Compact rows, expandable | Rows show only the name (and badges) by default; ▸ expands to the small-print description, AI summary and keywords. |
+| Compact rows, expandable | Rows show only the name (and badges) by default; ▸ expands to 作用 (what it does) and 使用说明 (how to use it), plus keywords and the package name. |
+| Purpose + usage per plugin | The usage line comes from the remembered AI label (`usage`, written from the plugin's own README usage section). Labels remembered before 0.2.3 get a README-derived usage backfilled at startup; when neither exists a capability-based hint is shown instead. |
+| Help page | The **?** in the panel title bar opens a built-in page with the plugin's own 作用 and 使用说明: the 全局/本对话 split, every row control and the known limits. |
 | This-conversation first | With a session in context the panel opens on the **本对话 / This conversation** page. It reuses the global list layout — one plugin per line, expandable — and merges the official plugins into a single collapsible entry. |
 | Movable panel | Drag the panel by its title bar; the position is remembered in `localStorage` and clamped to the viewport. Double-click the title bar to snap back to the top-right corner. |
 | New-plugin discovery | A silent scan every 5 minutes records newly appeared bundles and rows as pending. The button shows an orange dot; the panel offers one click to acknowledge them. |
@@ -33,6 +35,31 @@ Entry points:
 
 - **🧩 插件** at the left of the composer tool row (`conversation.input.left`) → floating panel with **全局** and **本对话** tabs.
 - **Settings → 插件管家** (`settings.section`) → discovery settings, profile paths, per-conversation policy list.
+
+### How to use it
+
+1. Click **🧩 插件** at the left of the composer tool row. With a session in context the panel lands on
+   **本对话**; otherwise on **全局**.
+2. Pick a scope at the top:
+   - **全局** switches the real profile composition (every conversation). It goes through the platform's plugin
+     manager and may report `restart required`.
+   - **本对话** only hides the chosen plugin's tools / MCP servers for this one conversation. It takes effect on the
+     next request, also for conversations that already started.
+3. Expand a row (click its name or ▸) to read **作用** (what it does) and **使用说明** (how to use it), plus
+   keywords and the package name.
+4. Buttons at the right of a row:
+
+| Control | What it does |
+|---|---|
+| switch | Global: load / unload that bundle or row. This conversation: allow / hide its tools for this conversation. |
+| ⚙ | Open that row's settings (only when the row declares a `Config`). |
+| ✨ | Re-derive the description from the plugin's own files. |
+| 中 | Ask the default model to write the Chinese label / summary / usage; remembered in `tags.json`. |
+| 🔒 | Kernel bundle: always on, listed for reference only. |
+| ? | This usage page. |
+
+5. Drag the title bar to move the panel; double-click to snap back. **设置 → 插件管家** holds the discovery switch,
+   the AI-label switch, the data paths and the per-conversation policy list.
 
 ### Install
 
@@ -132,7 +159,9 @@ node --check lib/index.js      # host half syntax
 | 按对话放行 | 面板「本对话」页把某个插件的工具、或某个 MCP 服务器，在这一轮对话里对模型隐藏。它在该 Agent 上调 `agent.ctx.tools.restrict()`，所以**对已开始的对话也生效**，下一个请求即可见。策略按会话保存，重载或重启后自动补应用。 |
 | 自动描述 | 插件没写 `meta.description` 时，按它自己的 README、客户端 slot id、`package.json` 生成一句话（≤90 字）；作者写的描述永远优先，✨ 可手动重新生成，并标注来源。 |
 | AI 中文标签 | 行上的「中」按钮让当前默认模型读这个插件自己的 README、`package.json`、客户端注入点，输出「中文名 + 一句话 + 2–4 个关键词」的 JSON。结果存在 `tags.json`，刷新/重启后仍在，并且中文名直接替换列表里的英文包名。模型答成散文时会带上次输出再问一次，还不行就用规则从插件信息里提炼。设置页可关闭此功能。 |
-| 紧凑行、按需展开 | 行默认只显示名称（与徽章），点 ▸ 才展开小字描述、AI 一句话与关键词。 |
+| 紧凑行、按需展开 | 行默认只显示名称（与徽章），点 ▸ 才展开「作用」与「使用说明」，以及关键词与包名。 |
+| 作用与使用说明 | 每个插件都有两段小字：**作用**（它做什么）与**使用说明**（怎么用）。使用说明优先用记住的 AI `usage`（从插件自己的 README 用法段总结）；0.2.3 之前记下的标签会在启动时从 README 补一份；两者都没有时，退化成按能力写的通用提示（例如「点 ⚙ 改配置；右侧开关控制这个包是否加载」）。 |
+| 使用说明页 | 面板标题栏的 **?** 打开内置说明页：插件管家的作用、全局/本对话的差别、每个按钮的含义、已知边界。 |
 | 本对话优先 | 有会话上下文时面板默认落在「本对话」页；它与「全局」页用同一套行布局（每项单列、可展开），官方插件合并成一条可下拉展开的条目。 |
 | 面板可拖动 | 按住标题栏拖动，位置记在 `localStorage` 并限制在视口内；双击标题栏回到右上角。 |
 | 自动发现 | 每 5 分钟静默扫描一次，把新出现的 bundle / 行记成「待纳入管理」，按钮上出现橙点，面板里一键认领。 |
@@ -143,6 +172,26 @@ node --check lib/index.js      # host half syntax
 
 - 输入框工具行左侧的 **🧩 插件**（`conversation.input.left`）→ 浮层面板，含「全局 / 本对话」两档。
 - **设置 → 插件管家**（`settings.section`）→ 发现设置、目录路径、按对话策略清单。
+
+### 怎么用
+
+1. 点输入框工具行左侧的 **🧩 插件**。有会话上下文时面板默认落在 **本对话**，否则落在 **全局**。
+2. 顶部选作用范围：
+   - **全局** 直接改 profile 的组合（影响所有对话），走平台自己的插件管理器，可能提示「需重启」。
+   - **本对话** 只在这一条对话里隐藏所选插件的工具 / MCP 服务器，下一条消息起生效，对已开始的对话也有效。
+3. 展开一行（点名字或 ▸）就能看到 **作用**（做什么）与 **使用说明**（怎么用），以及关键词和包名。
+4. 行尾按钮：
+
+| 按钮 | 作用 |
+|---|---|
+| 开关 | 全局：加载 / 卸载这个 bundle 或行。本对话：允许 / 隐藏它在这一条对话里的工具。 |
+| ⚙ | 打开该行的设置（只有声明了 `Config` 的行才有）。 |
+| ✨ | 重新读插件自己的文件生成描述。 |
+| 中 | 让默认模型写中文名 / 一句话 / 使用说明，记在 `tags.json`。 |
+| 🔒 | 内核包：始终启用，仅作展示。 |
+| ? | 这份使用说明。 |
+
+5. 按住标题栏可拖动面板，双击回位；**设置 → 插件管家** 里有自动发现开关、AI 标签开关、数据文件路径与按对话策略清单。
 
 ### 安装
 

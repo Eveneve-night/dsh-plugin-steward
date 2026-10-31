@@ -138,6 +138,7 @@ globalThis.fetch = async (url, options) => ({
       const entry = {
         label: '余额挂件',
         summary: '右下角常驻小鲸鱼，显示余额与每轮消耗',
+        usage: '装上后在界面右下角出现，鼠标移上去看明细；泡泡内容在它的设置里改',
         tags: ['余额', '挂件'],
         source: 'ai',
         model: 'deepseek-official/deepseek-flash',
@@ -156,7 +157,7 @@ globalThis.fetch = async (url, options) => ({
         layout: { profileDir: 'X', stateFile: 'X/state.json' },
         bundles: [
           { name: '@deepseek-ai/dsh-base', title: '基础', version: '0.2.1', enabled: true, official: true, installed: true, removable: false, alwaysOn: true, description: '内核', rowCount: 1 },
-          { name: 'dsh-whale-widget', title: '小鲸鱼', version: '0.4.2', enabled: true, official: false, installed: true, removable: true, alwaysOn: false, description: '右下角余额挂件，可自定义泡泡内容', rowCount: 1, rowIds: ['include:dsh-whale-widget'], aiTag: { label: '余额挂件', summary: '右下角常驻小鲸鱼，显示余额与每轮消耗', tags: ['余额', '挂件'], source: 'ai', model: 'deepseek-official/deepseek-flash' } },
+          { name: 'dsh-whale-widget', title: '小鲸鱼', version: '0.4.2', enabled: true, official: false, installed: true, removable: true, alwaysOn: false, description: '右下角余额挂件，可自定义泡泡内容', rowCount: 1, rowIds: ['include:dsh-whale-widget'], aiTag: { label: '余额挂件', summary: '右下角常驻小鲸鱼，显示余额与每轮消耗', usage: '装上后在界面右下角出现，鼠标移上去看明细；泡泡内容在它的设置里改', tags: ['余额', '挂件'], source: 'ai', model: 'deepseek-official/deepseek-flash' } },
         ],
         installed: ['@deepseek-ai/dsh-base', 'dsh-whale-widget'],
         rows: [
@@ -329,6 +330,12 @@ if (panelReg !== undefined) {
     if (opened.elements.filter(el => el.props?.className === 'pc-desc').length === 0) problems.push('展开后没有 .pc-desc 元素')
     if (opened.elements.filter(el => el.props?.className === 'pc-tag').length === 0) problems.push('展开后没有 .pc-tag 标签胶囊')
     if (opened.elements.filter(el => el.props?.className === 'pc-aisum').length === 0) problems.push('展开后没有 .pc-aisum AI 说明行')
+    // 作用 / 使用说明：每个插件行展开后都要有这两段，且使用说明优先用记住的 usage
+    const labels = opened.elements.filter(el => el.props?.className === 'pc-label').map(el => String(el.props?.children))
+    if (!labels.includes('作用')) problems.push('展开后没有「作用」小标题')
+    if (!labels.includes('使用说明')) problems.push('展开后没有「使用说明」小标题')
+    if (opened.elements.filter(el => el.props?.className === 'pc-usage').length === 0) problems.push('展开后没有 .pc-usage 使用说明')
+    if (!openedText.includes('鼠标移上去看明细')) problems.push('展开后的使用说明没有用记住的 usage 文案')
   }
 }
 
@@ -414,6 +421,34 @@ if (panelReg !== undefined) {
     if (sent.length !== 2 || !sent[1].disabledMcp.includes('misakanet')) problems.push('下一次切换丢失了刚保存的 MCP 策略')
   } finally {
     globalThis.fetch = originalFetch
+  }
+}
+
+// 使用说明页：标题栏「?」→ 作用/使用说明 → 「知道了」返回列表
+if (panelReg !== undefined) {
+  const before = render(panelReg.component, {})
+  const helpBtn = before.elements.find(el => el.props?.className === 'pc-x' && el.props?.children === '?')
+  if (helpBtn === undefined) problems.push('面板标题栏没有「?」使用说明按钮')
+  else {
+    try { helpBtn.props.onClick() } catch (error) {
+      problems.push(`打开使用说明抛错: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    const help = render(panelReg.component, {})
+    const helpText = help.text.join(' ').replace(/\s+/g, ' ')
+    for (const want of ['作用', '使用说明', '知道了']) {
+      if (!helpText.includes(want)) problems.push(`使用说明页缺少「${want}」`)
+    }
+    const okBtn = help.elements.find(el => el.props?.className === 'pc-hb')
+    if (okBtn === undefined) problems.push('使用说明页没有「知道了」返回按钮')
+    else {
+      try { okBtn.props.onClick() } catch (error) {
+        problems.push(`关闭使用说明抛错: ${error instanceof Error ? error.message : String(error)}`)
+      }
+      await new Promise((resolve) => setTimeout(resolve, 30))
+      const back = render(panelReg.component, {})
+      if (back.text.join(' ').includes('知道了')) problems.push('关闭使用说明后没有回到列表')
+    }
   }
 }
 
